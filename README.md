@@ -61,7 +61,9 @@
 ```bash
    git pull origin main
 ```
+## 🌟Credits  
 
+Special thanks to [**airdroponsider**](https://github.com/airdroponsider) for providing the source code for the **miner-cli** on Kaleido Testnet. Your work has been invaluable and is greatly appreciated!
 
 
 ## 📜 License
