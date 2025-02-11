@@ -45,7 +45,7 @@
    ```bash
    npm install
    ```
-3. Create a wallets.txt file and add your wallet addresses (one per line):
+3. Edit the wallets.json file using nano/vim, then add your wallet addresses (one per line):
    ```bash
    nano wallets.json
    ```
