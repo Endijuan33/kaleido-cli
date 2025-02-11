@@ -26,12 +26,12 @@
 •Status Code Handling: Handles 400, 401 errors (permanent failure) and 429, 5xx errors (retry with delay).
 
 ✅ **Mining Status & Earnings Tracking**
-•Displays mining statistics 
+•Displays mining statistics
 
 ✅ **Referral Bonus System**
 •Automatically detects and applies referral bonuses to mining earnings.
 
-✅ **Cross-Platform Compatibility**: 
+✅ **Cross-Platform Compatibility**:
 •Works on Windows, macOS, Linux, *Android (run with ubuntu proot/chroot).
 
 ## ⚙️ Installation
