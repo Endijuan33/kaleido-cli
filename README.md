@@ -59,7 +59,8 @@
 **To keep your bot up-to-date with the latest improvements and fixes, simply run the following command in your project directory:**
 
 ```bash
-   git pull origin main```
+   git pull origin main
+```
 
 
 
