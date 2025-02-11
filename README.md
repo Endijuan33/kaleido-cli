@@ -58,4 +58,4 @@
 
 ## 📜 License
 
-**This project is available under the MIT License. Feel free to use and modify it as needed.**
+**This project is available under the _MIT License_. Feel free to use and modify it as needed.**
