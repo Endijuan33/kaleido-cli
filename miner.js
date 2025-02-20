@@ -1,4 +1,3 @@
-// miner.js
 import axios from 'axios'
 import chalk from 'chalk'
 import * as fs from 'fs/promises';
@@ -26,6 +25,7 @@ class KaleidoMiningBot {
       powerUsage: 120
     };
     this.sessionFile = `session_${wallet}.json`;
+    this.session = null;
 
     this.api = axios.create({
       baseURL: 'https://kaleidofinance.xyz/api/testnet',
@@ -40,13 +40,15 @@ class KaleidoMiningBot {
   async loadSession() {
     try {
       const data = await fs.readFile(this.sessionFile, 'utf8');
-      const session = JSON.parse(data);
-      this.miningState.startTime = session.startTime;
-      this.currentEarnings = session.earnings;
-      this.referralBonus = session.referralBonus;
+      const sessionData = JSON.parse(data);
+      this.miningState.startTime = sessionData.startTime;
+      this.currentEarnings = sessionData.earnings;
+      this.referralBonus = sessionData.referralBonus;
+      this.session = sessionData.session || Math.floor(Math.random() * 1000000);
       console.log(chalk.green(`[Wallet ${this.botIndex}] Previous session loaded successfully`));
       return true;
     } catch (error) {
+      this.session = Math.floor(Math.random() * 1000000);
       return false;
     }
   }
@@ -55,7 +57,8 @@ class KaleidoMiningBot {
     const sessionData = {
       startTime: this.miningState.startTime,
       earnings: this.currentEarnings,
-      referralBonus: this.referralBonus
+      referralBonus: this.referralBonus,
+      session: this.session
     };
 
     try {
@@ -67,7 +70,6 @@ class KaleidoMiningBot {
 
   async initialize() {
     try {
-      // 1. Check registration status
       const regResponse = await this.retryRequest(
         () => this.api.get(`/check-registration?wallet=${this.wallet}`),
         "Registration check"
@@ -77,11 +79,9 @@ class KaleidoMiningBot {
         throw new Error('Wallet not registered');
       }
 
-      // 2. Try to load previous session
       const hasSession = await this.loadSession();
 
       if (!hasSession) {
-        // Hanya inisialisasi nilai baru jika session sebelumnya tidak ada
         this.referralBonus = regResponse.data.userData.referralBonus;
         this.currentEarnings = {
           total: regResponse.data.userData.referralBonus || 0,
@@ -91,7 +91,6 @@ class KaleidoMiningBot {
         this.miningState.startTime = Date.now();
       }
 
-      // 3. Mulai mining session
       this.miningState.isActive = true;
 
       console.log(chalk.green(`[Wallet ${this.botIndex}] Mining ${hasSession ? 'resumed' : 'initialized'} successfully`));
@@ -100,7 +99,7 @@ class KaleidoMiningBot {
     } catch (error) {
       console.error(chalk.red(`[Wallet ${this.botIndex}] Initialization failed: ${error.message}`));
       console.log(chalk.yellow(`[Wallet ${this.botIndex}] Retrying initialization in 10 seconds...`));
-      setTimeout(() => this.initialize(), 10000); // Coba lagi setelah 10 detik
+      setTimeout(() => this.initialize(), 10000);
     }
   }
 
@@ -110,15 +109,12 @@ class KaleidoMiningBot {
         return await requestFn();
       } catch (error) {
         const status = error.response ? error.response.status : null;
-        // Jika error status 400 atau 401, langsung gagal (bukan error sementara)
         if (status === 400 || status === 401) {
           console.error(chalk.red(`[${operationName}] Request failed with status ${status}: ${error.response?.data?.message || error.message}`));
           throw error;
         }
-        // Jika error 429 (Rate limited) atau server error (5xx), gunakan exponential backoff
-        const delay = Math.pow(2, i) * 1000; // 1s, 2s, 4s
-        console.log(chalk.yellow(`[${operationName}] Error (status: ${status || 'unknown'}). Retrying (${i + 1}/${retries}) in ${delay/1000} seconds...`));
-        // Jika header retry-after ada, gunakan delay tersebut
+        const delay = Math.pow(2, i) * 1000;
+        console.log(chalk.yellow(`[${operationName}] Error (status: ${status || 'unknown'}). Retrying (${i + 1}/${retries}) in ${delay / 1000} seconds...`));
         if (error.response && error.response.headers && error.response.headers['retry-after']) {
           const retryAfter = parseInt(error.response.headers['retry-after'], 10) * 1000;
           await new Promise(resolve => setTimeout(resolve, retryAfter));
@@ -139,7 +135,6 @@ class KaleidoMiningBot {
   async updateBalance(finalUpdate = false) {
     try {
       const newEarnings = this.calculateEarnings();
-      // Mencegah request jika tidak ada perubahan (threshold bisa disesuaikan)
       if (!finalUpdate && newEarnings < 0.00000001) {
         return;
       }
@@ -148,7 +143,8 @@ class KaleidoMiningBot {
         earnings: {
           total: this.currentEarnings.total + newEarnings,
           pending: finalUpdate ? 0 : newEarnings,
-          paid: finalUpdate ? this.currentEarnings.paid + newEarnings : this.currentEarnings.paid
+          paid: finalUpdate ? this.currentEarnings.paid + newEarnings : this.currentEarnings.paid,
+          session: this.session
         }
       };
 
@@ -172,7 +168,6 @@ class KaleidoMiningBot {
     }
   }
 
-  // Fungsi untuk memformat uptime ke format yang lebih readable
   formatUptime(seconds) {
     let sec = Math.floor(seconds);
     const months = Math.floor(sec / (30 * 24 * 3600));
@@ -195,19 +190,16 @@ class KaleidoMiningBot {
     return parts.join(':');
   }
 
-  // Fungsi untuk menyembunyikan wallet
   maskWallet(wallet) {
     return wallet.replace(/.(?=.{3})/g, "*");
   }
 
-  // Detail wallet ditampilkan terpisah (sebelum tabel) dengan warna hijau muda.
   logStatus(final = false) {
     const statusType = final ? "Final Status" : "Mining Status";
     const uptimeSeconds = (Date.now() - this.miningState.startTime) / 1000;
     const formattedUptime = this.formatUptime(uptimeSeconds);
     const maskedWallet = this.maskWallet(this.wallet);
 
-    // Siapkan header dan data untuk tabel
     const headers = ['Uptime', 'Active', 'Hashrate', 'Total', 'Pending', 'Paid', 'Referral Bonus'];
     const data = [
       formattedUptime,
@@ -219,24 +211,21 @@ class KaleidoMiningBot {
       `+${(this.referralBonus * 100).toFixed(1)}%`
     ];
 
-    // Fungsi helper untuk membuat tabel horizontal (header + 1 baris data)
     function buildHorizontalTable(headers, data) {
-      // Hitung lebar tiap kolom (tanpa formatting warna)
       const colWidths = headers.map((header, i) => {
         return Math.max(header.toString().length, data[i].toString().length) + 2;
       });
       const horizontalLine = '+' + colWidths.map(w => '-'.repeat(w)).join('+') + '+';
       const headerRow = '|' + headers.map((h, i) => ' ' + h.toString().padEnd(colWidths[i] - 1, ' ')).join('|') + '|';
 
-      // Definisikan fungsi pewarnaan untuk tiap kolom
       const colorFunctions = [
-        chalk.green,               // Uptime
-        chalk.green,               // Active
-        chalk.green,               // Hashrate
-        chalk.cyan,                // Total
-        chalk.yellow,              // Pending
-        chalk.hex('#FFA500'),      // Paid (orange)
-        text => text               // Referral Bonus (default)
+        chalk.green,
+        chalk.green,
+        chalk.green,
+        chalk.cyan,
+        chalk.yellow,
+        chalk.hex('#FFA500'),
+        text => text
       ];
 
       const dataRow = '|' + data.map((d, i) =>
@@ -248,7 +237,6 @@ class KaleidoMiningBot {
 
     const table = buildHorizontalTable(headers, data);
 
-    // Tampilkan log status
     console.log(chalk.yellow(
       `[Wallet ${this.botIndex}] ${statusType} for Wallet: ${chalk.greenBright(maskedWallet)}\n` + table
     ));
@@ -261,9 +249,9 @@ class KaleidoMiningBot {
       } catch (error) {
         console.error(chalk.red(`[Wallet ${this.botIndex}] API error detected, switching to offline mode.`));
         console.log(chalk.yellow(`[Wallet ${this.botIndex}] Retrying in 60 seconds...`));
-        await new Promise(resolve => setTimeout(resolve, 60000)); // Tunggu 60 detik jika terjadi error API
+        await new Promise(resolve => setTimeout(resolve, 60000));
       }
-      await new Promise(resolve => setTimeout(resolve, 30000)); // Update setiap 30 detik
+      await new Promise(resolve => setTimeout(resolve, 30000));
     }
   }
 
@@ -279,7 +267,6 @@ export class MiningCoordinator {
   static instance = null;
 
   constructor() {
-    // Singleton pattern untuk mencegah multiple instance
     if (MiningCoordinator.instance) {
       return MiningCoordinator.instance;
     }
@@ -304,7 +291,6 @@ export class MiningCoordinator {
   }
 
   async start() {
-    // Cegah start berganda
     if (this.isRunning) {
       console.log(chalk.yellow('Mining coordinator is already running'));
       return;
@@ -321,14 +307,12 @@ export class MiningCoordinator {
 
     console.log(chalk.blue(`Loaded ${wallets.length} wallets\n`));
 
-    // Inisialisasi semua bot
     this.bots = wallets.map((wallet, index) => {
       const bot = new KaleidoMiningBot(wallet, index + 1);
       bot.initialize();
       return bot;
     });
 
-    // Tangani shutdown (Ctrl+C)
     process.on('SIGINT', async () => {
       console.log(chalk.yellow('\nShutting down miners...'));
       this.totalPaid = (await Promise.all(this.bots.map(bot => bot.stop())))
