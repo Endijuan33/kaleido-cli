@@ -68,4 +68,4 @@ Special thanks to [**airdroponsider**](https://github.com/airdropinsiders) for p
 
 ## 📜 License
 
-**This project is available under the _MIT License_. Feel free to use and modify it as needed.**
+**This project is available under the [MIT](https://github.com/Endijuan33/kaleido-cli/blob/main/LICENSE) License. Feel free to use and modify it as needed.**
