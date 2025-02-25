@@ -26,9 +26,8 @@ class KaleidoMiningBot {
     };
     this.sessionFile = `session_${wallet}.json`;
     this.session = null;
-    // Properti baru untuk melacak downtime
-    this.pausedDuration = 0; // Total downtime dalam milidetik
-    this.pauseStart = null;  // Waktu mulai downtime saat terjadi maintenance
+    this.pausedDuration = 0;
+    this.pauseStart = null;
 
     this.api = axios.create({
       baseURL: 'https://kaleidofinance.xyz/api/testnet',
@@ -132,7 +131,6 @@ class KaleidoMiningBot {
     throw new Error(`${operationName} failed after ${retries} attempts.`);
   }
 
-  // Menghitung earnings berdasarkan waktu aktif saja (waktu total dikurangi downtime)
   calculateEarnings() {
     const effectiveElapsed = (Date.now() - this.miningState.startTime - this.pausedDuration) / 1000;
     return (this.stats.hashrate * effectiveElapsed * 0.0001) * (1 + this.referralBonus);
@@ -140,7 +138,7 @@ class KaleidoMiningBot {
 
   async updateBalance(finalUpdate = false) {
     try {
-      // Jika sebelumnya sedang dalam downtime, perbarui pausedDuration
+
       if (this.pauseStart) {
         const downtime = Date.now() - this.pauseStart;
         this.pausedDuration += downtime;
@@ -177,7 +175,7 @@ class KaleidoMiningBot {
         this.logStatus(finalUpdate);
       }
     } catch (error) {
-      // Jika terjadi error (misalnya karena maintenance), tandai waktu mulai downtime
+
       if (!this.pauseStart) {
         this.pauseStart = Date.now();
         console.log(chalk.yellow(`[Wallet ${this.botIndex}] Entering maintenance mode, pausing earnings calculation.`));
@@ -187,7 +185,6 @@ class KaleidoMiningBot {
     }
   }
 
-  // Fungsi bantu untuk memformat uptime (hanya menghitung waktu aktif)
   formatUptime(seconds) {
     let sec = Math.floor(seconds);
     const months = Math.floor(sec / (30 * 24 * 3600));
@@ -214,10 +211,8 @@ class KaleidoMiningBot {
     return wallet.replace(/.(?=.{3})/g, "*");
   }
 
-  // Menampilkan status dengan uptime efektif (waktu aktif) dan informasi earnings
   logStatus(final = false) {
     const statusType = final ? "Final Status" : "Mining Status";
-    // Hitung uptime efektif (total waktu - downtime)
     const uptimeSeconds = (Date.now() - this.miningState.startTime - this.pausedDuration) / 1000;
     const formattedUptime = this.formatUptime(uptimeSeconds);
     const maskedWallet = this.maskWallet(this.wallet);
