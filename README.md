@@ -56,7 +56,7 @@
 
 ## 🔄 Updating the Script
 
-**To keep your bot up-to-date with the latest improvements and fixes, simply run the following command in your project directory:**
+**To keep your bot up-to-date with the latest improvements and fixes, simply run:**
 
 ```bash
    git pull origin main
