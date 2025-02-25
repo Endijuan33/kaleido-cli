@@ -323,7 +323,7 @@ export class MiningCoordinator {
     const wallets = await this.loadWallets();
 
     if (wallets.length === 0) {
-      console.log(chalk.red('No valid wallets found in wallets.txt'));
+      console.log(chalk.red('No valid wallets found in wallets.json'));
       return;
     }
 

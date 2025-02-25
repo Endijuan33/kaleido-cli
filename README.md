@@ -63,9 +63,9 @@
 ```
 ## 🌟Credits  
 
-Special thanks to [**airdroponsider**](https://github.com/airdropinsiders) for providing the source code for the **miner-cli** on Kaleido Testnet. Your work has been invaluable and is greatly appreciated!
+Special thanks to [**airdropinsiders**](https://github.com/airdropinsiders) for providing the source code for the **miner-cli** on Kaleido Testnet. Your work has been invaluable and is greatly appreciated!
 
 
 ## 📜 License
 
-**This project is available under the _MIT License_. Feel free to use and modify it as needed.**
+**This project is available under the [MIT](https://github.com/Endijuan33/kaleido-cli/blob/main/LICENSE) License. Feel free to use and modify it as needed.**
